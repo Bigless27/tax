@@ -1,0 +1,38 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "project": "big project",
+      "metaData": [],
+      "expenses": [
+        {
+          "title": "expense 1",
+          "price": 100,
+          "isQualified": false
+        },
+        {
+          "title": "bills",
+          "price": 80,
+          "isQualified": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "project": "taxes",
+      "metaData": [],
+      "expenses": [
+        {
+          "title": "Dallas",
+          "price": 100,
+          "isQualified": false
+        },
+        {
+          "title": "Cowboys",
+          "price": 20,
+          "isQualified": true
+        }
+      ]
+    }
+  ]
+}

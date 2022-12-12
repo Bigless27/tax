@@ -1,8 +1,71 @@
+import { Grid, Button } from '@mui/material'
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import Sidebar from '../components/Sidebar';
+import SearchBar from '../components/Search';
+import React, { useEffect, useState } from 'react';
+import { IProject } from '../models/IProjects';
+import apiService from '../services/apiservice';
+import Projects from '../components/Projects';
+import Expenses from '../components/Expenses';
+import Create from '../components/Create';
+import ProjectHeader from '../components/ProjectHeader';
+import ExpenseHeader from '../components/ExpenseHeader';
 
 export default function Home() {
+  const [projects, setProjects] = useState<IProject[] | null>(null);
+  const [filteredProjects, setFilteredProjects] = useState<IProject[] | null>(null);
+  const [currentState, setCurrentState] = useState<"projects" | "expenses">("projects");
+  const [currentProjectId, setCurrentProjectId] = useState<number>(1);
+  const [editMode, setEditMode] = useState(false);
+  const [createMode, setCreateMode] = useState(false);
+
+  const getData = async () => {
+    let data = await apiService.getProjects();
+    setProjects(data);
+    setFilteredProjects(data);
+  }
+
+  useEffect(() => {
+    getData();
+  }, [])
+
+  const onProjectClicked = (id: number) => {
+    setCurrentState("expenses");
+    setCurrentProjectId(id);
+  }
+
+  const onSearch = ({ target: { value } }: any) => {
+    let filteredProjects = projects!.filter((data) => {
+      return ~data.project.indexOf(value)
+    })
+    setFilteredProjects(filteredProjects)
+  }
+
+  const onRefresh = () => {
+    setCreateMode(false);
+    getData();
+  }
+
+  const getExpenses = (id?: number) => {
+    if (id === undefined) {
+      id = currentProjectId
+    }
+    if (projects) {
+      let idx = projects?.findIndex((proj) => proj.id === id);
+      if (idx === undefined) idx = 0;
+      return projects[idx].expenses;
+    } else {
+      return []
+    }
+  }
+
+  const handleProjectIdChangeExpenses = (id: number) => {
+    setCurrentProjectId(id);
+    getExpenses(id);
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -11,61 +74,36 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+      {
+        projects &&
+        (
+          <Grid container direction='row'>
+            <Grid width="30%">
+              <Sidebar currentState={currentState} setState={setCurrentState} />
+            </Grid>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.tsx</code>
-        </p>
+            <Grid width="70%" className={styles.body}>
+              <Grid padding={'10px 0rem'} direction={"column"} container justifyContent={"center"} alignItems={"center"}>
+                {
+                  currentState === "projects" ? (
+                    <ProjectHeader createMode={createMode} editMode={editMode} onRefresh={onRefresh} onSearch={onSearch} setCreateMode={setCreateMode} setEditMode={setEditMode} />
+                  ) : (
+                    <ExpenseHeader currrentProjectId={currentProjectId} projects={projects} setCurrentProjectId={handleProjectIdChangeExpenses} />
+                  )
+                }
+              </Grid>
+              {
+                currentState === "projects" ? (
+                  <Projects onRefresh={onRefresh} isEditMode={editMode} projects={filteredProjects!} projectClicked={onProjectClicked} />
+                ) : (
+                  <Expenses currentProjectId={currentProjectId} expenses={getExpenses()} />
+                )
+              }
+            </Grid>
+          </Grid>
+        )
+      }
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
-    </div>
+    </div >
   )
 }
